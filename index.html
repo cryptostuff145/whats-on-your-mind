@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$mind</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 10px;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+        #canvas {
+            border: 2px solid #333;
+            margin: 20px 0;
+            width: min(90vw, 600px);
+            aspect-ratio: 1 / 1;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .meme-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 0px;
+        }
+        .meme-subtext {
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+            margin-top: 0px;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .meme-text {
+                font-size: 20px;
+            }
+            .meme-subtext {
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <p class="meme-text">$mind</p>
+    <p class="meme-subtext">CA: testtestesttestpump</p>
+    <h1>Meme Generator</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <canvas id="canvas"></canvas>
+    <button class="button" onclick="downloadMeme()">Download Meme</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const imageInput = document.getElementById('imageInput');
+
+        const templateImageSrc = 'https://i.imgur.com/KebqnXk.png';
+
+        const templateImage = new Image();
+        templateImage.src = templateImageSrc;
+
+        let userImage = null;
+
+        templateImage.crossOrigin = 'Anonymous';
+
+        const originalCanvasSize = 600;
+        const originalHeadX = 330;
+        const originalHeadY = 280;
+        const originalHeadRadius = 120;
+
+        function updateCanvasDimensions() {
+            const displayedWidth = canvas.clientWidth;
+            const displayedHeight = canvas.clientHeight;
+
+            canvas.width = displayedWidth;
+            canvas.height = displayedHeight;
+
+            const scale = displayedWidth / originalCanvasSize;
+
+            headX = originalHeadX * scale;
+            headY = originalHeadY * scale;
+            headRadius = originalHeadRadius * scale;
+            headDiameter = headRadius * 2;
+
+            drawCanvas();
+        }
+
+        updateCanvasDimensions();
+        window.addEventListener('resize', updateCanvasDimensions);
+
+        templateImage.onload = function() {
+            drawCanvas();
+        };
+
+        templateImage.onerror = function() {
+            console.error('Failed to load the template image. Please ensure the URL is correct and accessible.');
+        };
+
+        imageInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userImage = new Image();
+                    userImage.src = e.target.result;
+                    userImage.onload = function() {
+                        drawCanvas();
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
+
+            if (userImage) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
+                ctx.clip();
+
+                const imgWidth = userImage.width;
+                const imgHeight = userImage.height;
+                let srcX, srcY, srcSize;
+
+                if (imgWidth > imgHeight) {
+                    srcSize = imgHeight;
+                    srcX = (imgWidth - imgHeight) / 2;
+                    srcY = 0;
+                } else {
+                    srcSize = imgWidth;
+                    srcX = 0;
+                    srcY = (imgHeight - imgWidth) / 2;
+                }
+
+                ctx.drawImage(
+                    userImage,
+                    srcX, srcY, srcSize, srcSize,
+                    headX - headRadius, headY - headRadius, headDiameter, headDiameter
+                );
+
+                ctx.restore();
+            }
+        }
+
+        function downloadMeme() {
+            const link = document.createElement('a');
+            link.download = 'meme.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
